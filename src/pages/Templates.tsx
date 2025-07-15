@@ -1,115 +1,80 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, 
   Search, 
   Filter,
   Eye,
-  Download,
-  Star,
-  Clock,
-  Users,
-  Scale,
   Building,
-  Heart
+  Car,
+  Scale,
+  Users
 } from "lucide-react";
+
+interface DocumentTemplate {
+  id: string;
+  name: string;
+  category: string;
+  subcategory: string | null;
+  variant: string | null;
+  template_content: any;
+  fields: any;
+  created_at: string;
+  updated_at: string;
+}
 
 const Templates = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [
-    { id: "all", name: "Todos", icon: FileText, count: 48 },
-    { id: "contratos", name: "Contratos", icon: Building, count: 15 },
-    { id: "peticoes", name: "Petições", icon: Scale, count: 12 },
-    { id: "procuracoes", name: "Procurações", icon: Users, count: 8 },
-    { id: "outros", name: "Outros", icon: FileText, count: 13 }
+    { id: "all", name: "Todos", icon: FileText, count: 0 },
+    { id: "contrato_aluguel", name: "Contratos de Aluguel", icon: Building, count: 0 },
+    { id: "contrato_compra_venda", name: "Compra e Venda", icon: FileText, count: 0 },
+    { id: "contrato_prestacao_servico", name: "Prestação de Serviço", icon: Users, count: 0 },
+    { id: "procuracao", name: "Procurações", icon: Scale, count: 0 }
   ];
 
-  const templates = [
-    {
-      id: 1,
-      title: "Contrato de Prestação de Serviços",
-      description: "Template completo para contratos de prestação de serviços com todas as cláusulas essenciais",
-      category: "contratos",
-      rating: 4.8,
-      downloads: 1250,
-      lastUpdated: "2 dias atrás",
-      isPremium: false,
-      tags: ["Serviços", "Comercial", "Padrão"],
-      estimatedTime: "15 min"
-    },
-    {
-      id: 2,
-      title: "Petição Inicial - Ação de Cobrança",
-      description: "Modelo de petição inicial para ações de cobrança com fundamentação jurídica",
-      category: "peticoes",
-      rating: 4.9,
-      downloads: 890,
-      lastUpdated: "1 semana atrás",
-      isPremium: true,
-      tags: ["Cobrança", "Cível", "Processual"],
-      estimatedTime: "25 min"
-    },
-    {
-      id: 3,
-      title: "Procuração Ad Judicia",
-      description: "Procuração específica para representação em processos judiciais",
-      category: "procuracoes",
-      rating: 4.7,
-      downloads: 2100,
-      lastUpdated: "3 dias atrás",
-      isPremium: false,
-      tags: ["Judicial", "Representação", "Padrão"],
-      estimatedTime: "10 min"
-    },
-    {
-      id: 4,
-      title: "Contrato de Trabalho CLT",
-      description: "Template para contrato de trabalho seguindo as normas da CLT",
-      category: "contratos",
-      rating: 4.6,
-      downloads: 1850,
-      lastUpdated: "5 dias atrás",
-      isPremium: false,
-      tags: ["Trabalhista", "CLT", "Emprego"],
-      estimatedTime: "20 min"
-    },
-    {
-      id: 5,
-      title: "Petição de Divórcio Consensual",
-      description: "Modelo para petição de divórcio consensual com partilha de bens",
-      category: "peticoes",
-      rating: 4.5,
-      downloads: 756,
-      lastUpdated: "1 semana atrás",
-      isPremium: true,
-      tags: ["Família", "Divórcio", "Consensual"],
-      estimatedTime: "30 min"
-    },
-    {
-      id: 6,
-      title: "Termo de Confidencialidade (NDA)",
-      description: "Acordo de confidencialidade para proteção de informações sigilosas",
-      category: "contratos",
-      rating: 4.8,
-      downloads: 1456,
-      lastUpdated: "4 dias atrás",
-      isPremium: false,
-      tags: ["Confidencialidade", "Proteção", "Empresarial"],
-      estimatedTime: "12 min"
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("document_templates")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+
+      setTemplates(data || []);
+      
+      // Update category counts
+      categories.forEach(category => {
+        if (category.id === "all") {
+          category.count = data?.length || 0;
+        } else {
+          category.count = data?.filter(template => template.category === category.id).length || 0;
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error loading templates:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || template.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
@@ -120,14 +85,101 @@ const Templates = () => {
     return category ? category.icon : FileText;
   };
 
+  const getCategoryName = (categoryId: string) => {
+    switch (categoryId) {
+      case "contrato_aluguel":
+        return "Contrato de Aluguel";
+      case "contrato_compra_venda":
+        return "Compra e Venda";
+      case "contrato_prestacao_servico":
+        return "Prestação de Serviço";
+      case "procuracao":
+        return "Procuração";
+      default:
+        return "Outros";
+    }
+  };
+
+  const getSubcategoryName = (subcategory: string | null) => {
+    if (!subcategory) return "";
+    
+    switch (subcategory) {
+      case "residencial":
+        return "Residencial";
+      case "comercial":
+        return "Comercial";
+      case "veiculo":
+        return "Veículo";
+      case "imovel":
+        return "Imóvel";
+      case "advogado":
+        return "Advocatícios";
+      case "educacional":
+        return "Educacionais";
+      case "diversos":
+        return "Diversos";
+      case "particular":
+        return "Particular";
+      default:
+        return subcategory;
+    }
+  };
+
+  const getVariantName = (variant: string | null) => {
+    if (!variant) return "";
+    
+    switch (variant) {
+      case "com_fiador":
+        return "Com Fiador";
+      case "sem_fiador":
+        return "Sem Fiador";
+      case "uso_aplicativos":
+        return "Uso em Aplicativos";
+      case "uso_convencional":
+        return "Uso Convencional";
+      case "convencional":
+        return "Convencional";
+      case "rural":
+        return "Rural";
+      case "compromisso_particular":
+        return "Compromisso Particular";
+      case "reserva_dominio":
+        return "Reserva de Domínio";
+      case "alienacao_fiduciaria":
+        return "Alienação Fiduciária";
+      case "escritorio":
+        return "Escritório";
+      case "instituicao":
+        return "Instituição";
+      case "geral":
+        return "Geral";
+      case "fins_especificos":
+        return "Fins Específicos";
+      case "ad_judicia":
+        return "Ad Judicia";
+      case "poderes_especiais":
+        return "Poderes Especiais";
+      default:
+        return variant;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Biblioteca de Templates</h1>
+          <h1 className="text-3xl font-bold text-foreground">Biblioteca de Modelos</h1>
           <p className="text-muted-foreground">
-            Explore nossa coleção de templates jurídicos profissionais
+            Explore nossa coleção de modelos jurídicos profissionais
           </p>
         </div>
 
@@ -136,7 +188,7 @@ const Templates = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar templates..."
+              placeholder="Buscar modelos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -191,14 +243,8 @@ const Templates = () => {
         <div className="lg:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">
-              {filteredTemplates.length} templates encontrados
+              {filteredTemplates.length} modelos encontrados
             </p>
-            <Tabs defaultValue="grid" className="w-auto">
-              <TabsList>
-                <TabsTrigger value="grid">Grade</TabsTrigger>
-                <TabsTrigger value="list">Lista</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -213,54 +259,21 @@ const Templates = () => {
                         <div className="bg-primary/10 p-2 rounded-lg">
                           <CategoryIcon className="h-4 w-4 text-primary" />
                         </div>
-                        {template.isPremium && (
-                          <Badge variant="secondary" className="bg-gradient-primary text-primary-foreground">
-                            Premium
-                          </Badge>
-                        )}
                       </div>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Heart className="h-4 w-4" />
-                      </Button>
                     </div>
                     
                     <CardTitle className="text-lg leading-tight">
-                      {template.title}
+                      {template.name}
                     </CardTitle>
                     
-                    <CardDescription className="text-sm line-clamp-2">
-                      {template.description}
+                    <CardDescription className="text-sm">
+                      {getCategoryName(template.category)}
+                      {template.subcategory && ` • ${getSubcategoryName(template.subcategory)}`}
+                      {template.variant && ` • ${getVariantName(template.variant)}`}
                     </CardDescription>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1">
-                      {template.tags.slice(0, 3).map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{template.rating}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Download className="h-3 w-3" />
-                          <span>{template.downloads}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{template.estimatedTime}</span>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Actions */}
                     <div className="flex gap-2">
                       <Button variant="professional" size="sm" className="flex-1">
@@ -268,12 +281,12 @@ const Templates = () => {
                         Visualizar
                       </Button>
                       <Button variant="elegant" size="sm" className="flex-1">
-                        Usar Template
+                        Usar Modelo
                       </Button>
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Atualizado {template.lastUpdated}
+                      Atualizado {new Date(template.updated_at).toLocaleDateString('pt-BR')}
                     </p>
                   </CardContent>
                 </Card>
@@ -284,7 +297,7 @@ const Templates = () => {
           {filteredTemplates.length === 0 && (
             <div className="text-center py-12">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum template encontrado</h3>
+              <h3 className="text-lg font-medium mb-2">Nenhum modelo encontrado</h3>
               <p className="text-muted-foreground">
                 Tente ajustar seus filtros ou termos de busca.
               </p>

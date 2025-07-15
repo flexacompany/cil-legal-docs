@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,8 @@ import Auth from "./pages/Auth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
+import DocumentSelection from "./pages/DocumentSelection";
+import DocumentEditor from "./pages/DocumentEditor";
 import Templates from "./pages/Templates";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -26,6 +29,8 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="documents" element={<Documents />} />
+            <Route path="documents/new" element={<DocumentSelection />} />
+            <Route path="documents/editor" element={<DocumentEditor />} />
             <Route path="templates" element={<Templates />} />
             <Route path="settings" element={<Settings />} />
           </Route>

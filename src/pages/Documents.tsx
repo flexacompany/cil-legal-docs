@@ -1,140 +1,199 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, 
   Search, 
   Plus,
-  MoreVertical,
+  Eye,
   Edit3,
   Trash2,
-  Share2,
   Download,
-  Clock,
-  Users,
-  Filter,
-  Grid3X3,
-  List
+  Filter
 } from "lucide-react";
 
+interface Document {
+  id: string;
+  title: string;
+  type: string;
+  subtype: string | null;
+  variant: string | null;
+  content: any;
+  status: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
 const Documents = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  const documents = [
-    {
-      id: 1,
-      title: "Contrato de Prestação de Serviços - Cliente ABC",
-      type: "Contrato",
-      status: "Rascunho",
-      lastModified: "2 horas atrás",
-      createdAt: "15/07/2024",
-      collaborators: ["João Silva", "Maria Santos"],
-      size: "2.4 MB",
-      description: "Contrato de prestação de serviços para desenvolvimento de software"
-    },
-    {
-      id: 2,
-      title: "Petição Inicial - Ação de Cobrança Empresa XYZ",
-      type: "Petição",
-      status: "Em Revisão",
-      lastModified: "1 dia atrás",
-      createdAt: "14/07/2024",
-      collaborators: ["Ana Costa"],
-      size: "1.8 MB",
-      description: "Petição inicial para ação de cobrança contra inadimplência"
-    },
-    {
-      id: 3,
-      title: "Procuração Ad Judicia - Processo 123456",
-      type: "Procuração",
-      status: "Finalizado",
-      lastModified: "3 dias atrás",
-      createdAt: "12/07/2024",
-      collaborators: [],
-      size: "856 KB",
-      description: "Procuração para representação judicial em processo trabalhista"
-    },
-    {
-      id: 4,
-      title: "Contrato de Trabalho - Novo Funcionário",
-      type: "Contrato",
-      status: "Finalizado",
-      lastModified: "1 semana atrás",
-      createdAt: "08/07/2024",
-      collaborators: ["Pedro Lima"],
-      size: "1.2 MB",
-      description: "Contrato de trabalho CLT para admissão de novo colaborador"
-    },
-    {
-      id: 5,
-      title: "Termo de Confidencialidade - Projeto Beta",
-      type: "Contrato",
-      status: "Aguardando Assinatura",
-      lastModified: "2 dias atrás",
-      createdAt: "13/07/2024",
-      collaborators: ["Carlos Mendes", "Lucia Oliveira"],
-      size: "945 KB",
-      description: "NDA para proteção de informações confidenciais do projeto"
-    },
-    {
-      id: 6,
-      title: "Contestação - Processo Civil 789012",
-      type: "Petição",
-      status: "Rascunho",
-      lastModified: "4 horas atrás",
-      createdAt: "15/07/2024",
-      collaborators: ["Roberto Silva"],
-      size: "3.1 MB",
-      description: "Contestação em processo de indenização por danos morais"
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+
+      setDocuments(data || []);
+      
+    } catch (error) {
+      console.error("Error loading documents:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os documentos.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const getStatusColor = (status: string) => {
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", documentId);
+
+      if (error) throw error;
+
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      
+      toast({
+        title: "Sucesso",
+        description: "Documento excluído com sucesso.",
+      });
+      
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o documento.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredDocuments = documents.filter(document => {
+    const matchesSearch = document.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === "all" || document.status === selectedStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status: string | null) => {
     switch (status) {
-      case "Finalizado":
+      case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Em Revisão":
+      case "draft":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "Rascunho":
+      case "archived":
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-      case "Aguardando Assinatura":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    return FileText; // You could expand this to have different icons per type
+  const getStatusText = (status: string | null) => {
+    switch (status) {
+      case "completed":
+        return "Finalizado";
+      case "draft":
+        return "Rascunho";
+      case "archived":
+        return "Arquivado";
+      default:
+        return "Desconhecido";
+    }
   };
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const getDocumentTypeName = (type: string, subtype: string | null, variant: string | null) => {
+    let name = "";
     
-    const matchesFilter = filterStatus === "all" || doc.status === filterStatus;
-    
-    return matchesSearch && matchesFilter;
-  });
+    switch (type) {
+      case "contrato_aluguel":
+        name = "Contrato de Aluguel";
+        break;
+      case "contrato_compra_venda":
+        name = "Contrato de Compra e Venda";
+        break;
+      case "contrato_prestacao_servico":
+        name = "Contrato de Prestação de Serviço";
+        break;
+      case "procuracao":
+        name = "Procuração";
+        break;
+      default:
+        name = "Documento";
+    }
 
-  const statusOptions = [
-    { value: "all", label: "Todos" },
-    { value: "Rascunho", label: "Rascunho" },
-    { value: "Em Revisão", label: "Em Revisão" },
-    { value: "Finalizado", label: "Finalizado" },
-    { value: "Aguardando Assinatura", label: "Aguardando Assinatura" }
-  ];
+    if (subtype) {
+      switch (subtype) {
+        case "residencial":
+          name += " Residencial";
+          break;
+        case "comercial":
+          name += " Comercial";
+          break;
+        case "veiculo":
+          name += " de Veículo";
+          break;
+        case "imovel":
+          name += " de Imóvel";
+          break;
+        case "advogado":
+          name += " Advocatícios";
+          break;
+        case "educacional":
+          name += " Educacionais";
+          break;
+        case "particular":
+          name += " Particular";
+          break;
+      }
+    }
+
+    return name;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -144,14 +203,12 @@ const Documents = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Meus Documentos</h1>
             <p className="text-muted-foreground">
-              Gerencie e organize todos os seus documentos jurídicos
+              Gerencie todos os seus documentos jurídicos
             </p>
           </div>
-          <Button variant="professional" className="gap-2" asChild>
-            <a href="/dashboard/documents/new">
-              <Plus className="h-4 w-4" />
-              Novo Documento
-            </a>
+          <Button variant="professional" onClick={() => navigate("/dashboard/documents/new")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Documento
           </Button>
         </div>
 
@@ -166,229 +223,99 @@ const Documents = () => {
               className="pl-10"
             />
           </div>
-          
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Status: {statusOptions.find(opt => opt.value === filterStatus)?.label}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setFilterStatus(option.value)}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="flex border border-border rounded-md">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="rounded-r-none"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <Button variant="outline" className="gap-2">
+            <Filter className="h-4 w-4" />
+            Filtros
+          </Button>
         </div>
       </div>
 
-      {/* Documents Display */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {filteredDocuments.length} documentos encontrados
-          </p>
-        </div>
+      {/* Tabs */}
+      <Tabs value={selectedStatus} onValueChange={setSelectedStatus}>
+        <TabsList>
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="draft">Rascunhos</TabsTrigger>
+          <TabsTrigger value="completed">Finalizados</TabsTrigger>
+          <TabsTrigger value="archived">Arquivados</TabsTrigger>
+        </TabsList>
 
-        {viewMode === "grid" ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDocuments.map((doc) => {
-              const TypeIcon = getTypeIcon(doc.type);
-              
-              return (
-                <Card key={doc.id} className="group hover:shadow-elegant transition-all duration-300 animate-fade-in">
+        <TabsContent value={selectedStatus} className="mt-6">
+          {filteredDocuments.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">
+                {documents.length === 0 ? "Nenhum documento criado" : "Nenhum documento encontrado"}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {documents.length === 0 
+                  ? "Comece criando seu primeiro documento jurídico."
+                  : "Tente ajustar seus filtros ou termos de busca."
+                }
+              </p>
+              {documents.length === 0 && (
+                <Button variant="professional" onClick={() => navigate("/dashboard/documents/new")} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Criar Primeiro Documento
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredDocuments.map((document) => (
+                <Card key={document.id} className="group hover:shadow-elegant transition-all duration-300 animate-fade-in">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                          <TypeIcon className="h-4 w-4 text-primary" />
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {doc.type}
-                        </Badge>
+                      <div className="bg-primary/10 p-2 rounded-lg">
+                        <FileText className="h-4 w-4 text-primary" />
                       </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit3 className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Compartilhar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Badge className={getStatusColor(document.status)}>
+                        {getStatusText(document.status)}
+                      </Badge>
                     </div>
                     
-                    <CardTitle className="text-lg leading-tight line-clamp-2">
-                      {doc.title}
+                    <CardTitle className="text-lg leading-tight">
+                      {document.title}
                     </CardTitle>
                     
-                    <CardDescription className="text-sm line-clamp-2">
-                      {doc.description}
+                    <CardDescription className="text-sm">
+                      {getDocumentTypeName(document.type, document.subtype, document.variant)}
                     </CardDescription>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <Badge className={getStatusColor(doc.status)}>
-                      {doc.status}
-                    </Badge>
-
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{doc.lastModified}</span>
-                        </div>
-                        <span>{doc.size}</span>
-                      </div>
-                      
-                      {doc.collaborators.length > 0 && (
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3" />
-                          <span>{doc.collaborators.length} colaborador(es)</span>
-                        </div>
-                      )}
+                    <div className="text-xs text-muted-foreground">
+                      <p>Criado: {new Date(document.created_at).toLocaleDateString('pt-BR')}</p>
+                      <p>Modificado: {new Date(document.updated_at).toLocaleDateString('pt-BR')}</p>
                     </div>
 
+                    {/* Actions */}
                     <div className="flex gap-2">
-                      <Button variant="professional" size="sm" className="flex-1">
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Editar
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver
                       </Button>
-                      <Button variant="elegant" size="sm">
-                        <Share2 className="h-4 w-4" />
+                      <Button variant="outline" size="sm">
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteDocument(document.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredDocuments.map((doc) => {
-              const TypeIcon = getTypeIcon(doc.type);
-              
-              return (
-                <Card key={doc.id} className="group hover:shadow-soft transition-all duration-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                          <TypeIcon className="h-4 w-4 text-primary" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium truncate">{doc.title}</h3>
-                          <p className="text-sm text-muted-foreground truncate">{doc.description}</p>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <Badge variant="outline">{doc.type}</Badge>
-                          <Badge className={getStatusColor(doc.status)}>{doc.status}</Badge>
-                          <span>{doc.lastModified}</span>
-                          <span>{doc.size}</span>
-                          {doc.collaborators.length > 0 && (
-                            <div className="flex items-center space-x-1">
-                              <Users className="h-3 w-3" />
-                              <span>{doc.collaborators.length}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {filteredDocuments.length === 0 && (
-          <div className="text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhum documento encontrado</h3>
-            <p className="text-muted-foreground mb-4">
-              Tente ajustar seus filtros ou criar um novo documento.
-            </p>
-            <Button variant="professional" asChild>
-              <a href="/dashboard/documents/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Documento
-              </a>
-            </Button>
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
