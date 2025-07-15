@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,6 @@ import {
   ArrowRight, 
   FileText, 
   Scale, 
-  Users, 
   Zap, 
   Shield, 
   Clock,
@@ -18,18 +18,13 @@ const Index = () => {
   const features = [
     {
       icon: FileText,
-      title: "Templates Profissionais",
-      description: "Biblioteca completa com centenas de templates jurídicos validados por especialistas"
+      title: "Modelos Profissionais",
+      description: "Biblioteca completa com centenas de modelos jurídicos validados por especialistas"
     },
     {
       icon: Scale,
       title: "Editor Avançado",
       description: "Interface intuitiva para personalizar documentos com todas as funcionalidades necessárias"
-    },
-    {
-      icon: Users,
-      title: "Colaboração em Tempo Real",
-      description: "Trabalhe em equipe com revisões simultâneas e controle de versões automático"
     },
     {
       icon: Shield,
@@ -58,13 +53,13 @@ const Index = () => {
     {
       name: "Dr. Carlos Mendes",
       role: "Advogado Autônomo",
-      content: "Interface intuitiva e templates de alta qualidade. Recomendo para todos os colegas.",
+      content: "Interface intuitiva e modelos de alta qualidade. Recomendo para todos os colegas.",
       rating: 5
     },
     {
       name: "Dra. Paula Santos",
       role: "Departamento Jurídico - TechCorp",
-      content: "A colaboração em tempo real facilitou muito o trabalho da nossa equipe.",
+      content: "A facilidade de criação de documentos agilizou muito o trabalho da nossa equipe.",
       rating: 5
     }
   ];
@@ -94,33 +89,35 @@ const Index = () => {
             </p>
             
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Templates profissionais, editor avançado e colaboração em tempo real para advogados e escritórios modernos
+              Modelos profissionais, editor avançado para advogados e escritórios modernos
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button variant="professional" size="lg" className="text-lg px-8 py-4" asChild>
                 <a href="/auth">
-                  Começar Gratuitamente
+                  Teste Gratuito
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
               </Button>
-              <Button variant="elegant" size="lg" className="text-lg px-8 py-4">
-                Ver Demonstração
+              <Button variant="elegant" size="lg" className="text-lg px-8 py-4" asChild>
+                <a href="/auth">
+                  Login
+                </a>
               </Button>
             </div>
             
             <div className="mt-8 flex justify-center items-center space-x-6 text-sm text-muted-foreground">
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                Teste gratuito por 30 dias
+                Teste grátis por tempo limitado
               </div>
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                Sem cartão de crédito
+                Assinaturas mensais e trimestrais
               </div>
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                Suporte especializado
+                Biblioteca com centenas de documentos
               </div>
             </div>
           </div>
@@ -231,9 +228,6 @@ const Index = () => {
                 Iniciar Teste Gratuito
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
-            </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-              Falar com Especialista
             </Button>
           </div>
         </div>

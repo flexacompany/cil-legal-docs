@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,24 +16,37 @@ import {
   Upload,
   Save,
   AlertTriangle,
-  Check
+  Check,
+  Building
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
   const [profileData, setProfileData] = useState({
-    fullName: "João Silva",
-    email: "joao.silva@email.com",
-    phone: "(11) 99999-9999",
-    oab: "SP 123.456",
-    company: "Silva & Associados"
+    fullName: "",
+    email: "",
+    phone: "",
+    profession: "",
+    maritalStatus: "",
+    birthplace: "",
+    address: ""
   });
+
+  const [companyData, setCompanyData] = useState({
+    businessName: "",
+    cnpj: "",
+    contact: "",
+    email: "",
+    address: "",
+    legalRepresentative: ""
+  });
+
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
 
   const [notifications, setNotifications] = useState({
     emailUpdates: true,
     documentReminders: true,
-    collaborationAlerts: true,
     systemAnnouncements: false,
     marketingEmails: false
   });
@@ -47,6 +61,13 @@ const Settings = () => {
     toast({
       title: "Perfil atualizado",
       description: "Suas informações foram salvas com sucesso.",
+    });
+  };
+
+  const handleCompanySave = () => {
+    toast({
+      title: "Dados da empresa salvos",
+      description: "As informações da empresa foram atualizadas.",
     });
   };
 
@@ -76,6 +97,7 @@ const Settings = () => {
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="company">Empresa</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
           <TabsTrigger value="security">Segurança</TabsTrigger>
           <TabsTrigger value="billing">Assinatura</TabsTrigger>
@@ -86,7 +108,7 @@ const Settings = () => {
             <CardHeader>
               <CardTitle>Informações do Perfil</CardTitle>
               <CardDescription>
-                Atualize suas informações pessoais e profissionais
+                Preencha suas informações pessoais
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -94,7 +116,7 @@ const Settings = () => {
                 <Avatar className="h-20 w-20">
                   <AvatarImage src="/placeholder-avatar.jpg" />
                   <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                    JS
+                    <User className="h-8 w-8" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
@@ -110,44 +132,67 @@ const Settings = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome Completo</Label>
+                  <Label htmlFor="fullName">Nome Completo *</Label>
                   <Input
                     id="fullName"
                     value={profileData.fullName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="Digite seu nome completo"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
+                  <Label htmlFor="email">E-mail *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="seu@email.com"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="phone">Telefone *</Label>
                   <Input
                     id="phone"
                     value={profileData.phone}
                     onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="oab">OAB</Label>
+                  <Label htmlFor="profession">Profissão *</Label>
                   <Input
-                    id="oab"
-                    value={profileData.oab}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, oab: e.target.value }))}
+                    id="profession"
+                    value={profileData.profession}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, profession: e.target.value }))}
+                    placeholder="Ex: Advogado"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maritalStatus">Estado Civil *</Label>
+                  <Input
+                    id="maritalStatus"
+                    value={profileData.maritalStatus}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, maritalStatus: e.target.value }))}
+                    placeholder="Ex: Solteiro(a)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="birthplace">Naturalidade *</Label>
+                  <Input
+                    id="birthplace"
+                    value={profileData.birthplace}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, birthplace: e.target.value }))}
+                    placeholder="Ex: São Paulo, SP"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="company">Escritório/Empresa</Label>
+                  <Label htmlFor="address">Endereço Completo *</Label>
                   <Input
-                    id="company"
-                    value={profileData.company}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
+                    id="address"
+                    value={profileData.address}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Rua, número, bairro, cidade, estado, CEP"
                   />
                 </div>
               </div>
@@ -158,6 +203,101 @@ const Settings = () => {
                   Salvar Alterações
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="company" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Building className="h-5 w-5" />
+                <span>Informações da Empresa</span>
+              </CardTitle>
+              <CardDescription>
+                Cadastre os dados da sua empresa (opcional)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-company"
+                  checked={showCompanyForm}
+                  onCheckedChange={setShowCompanyForm}
+                />
+                <Label htmlFor="show-company" className="font-medium">
+                  Cadastrar empresa
+                </Label>
+              </div>
+
+              {showCompanyForm && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="businessName">Razão Social *</Label>
+                    <Input
+                      id="businessName"
+                      value={companyData.businessName}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, businessName: e.target.value }))}
+                      placeholder="Nome da empresa"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ *</Label>
+                    <Input
+                      id="cnpj"
+                      value={companyData.cnpj}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, cnpj: e.target.value }))}
+                      placeholder="00.000.000/0000-00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyContact">Contato *</Label>
+                    <Input
+                      id="companyContact"
+                      value={companyData.contact}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, contact: e.target.value }))}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyEmail">E-mail *</Label>
+                    <Input
+                      id="companyEmail"
+                      type="email"
+                      value={companyData.email}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="contato@empresa.com"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="companyAddress">Endereço Completo *</Label>
+                    <Input
+                      id="companyAddress"
+                      value={companyData.address}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
+                      placeholder="Rua, número, bairro, cidade, estado, CEP"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="legalRepresentative">Nome Completo do Representante Legal *</Label>
+                    <Input
+                      id="legalRepresentative"
+                      value={companyData.legalRepresentative}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, legalRepresentative: e.target.value }))}
+                      placeholder="Nome do responsável legal"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {showCompanyForm && (
+                <div className="flex justify-end">
+                  <Button variant="professional" onClick={handleCompanySave}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar Dados da Empresa
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -182,11 +322,6 @@ const Settings = () => {
                     key: "documentReminders",
                     title: "Lembretes de Documentos",
                     description: "Alertas sobre prazos e documentos pendentes"
-                  },
-                  {
-                    key: "collaborationAlerts",
-                    title: "Alertas de Colaboração",
-                    description: "Notificações quando alguém compartilhar ou comentar em documentos"
                   },
                   {
                     key: "systemAnnouncements",
@@ -370,8 +505,7 @@ const Settings = () => {
                   {[
                     { label: "Documentos criados", used: 24, limit: 100 },
                     { label: "Armazenamento", used: 2.1, limit: 10, unit: "GB" },
-                    { label: "Colaboradores", used: 3, limit: 10 },
-                    { label: "Templates premium", used: 8, limit: "Ilimitado" }
+                    { label: "Modelos premium", used: 8, limit: "Ilimitado" }
                   ].map((item, index) => (
                     <div key={index} className="space-y-1">
                       <div className="flex justify-between text-sm">

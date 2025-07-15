@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,11 +6,12 @@ import {
   FileText, 
   Plus, 
   Clock, 
-  Users, 
   TrendingUp,
   Library,
   Eye,
-  Edit3
+  Edit3,
+  User,
+  Search
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -20,28 +22,25 @@ export default function Dashboard() {
       title: "Contrato de Prestação de Serviços",
       type: "Contrato",
       lastModified: "2 horas atrás",
-      status: "Rascunho",
-      collaborators: 2
+      status: "Rascunho"
     },
     {
       id: 2,
       title: "Petição Inicial - Ação de Cobrança",
       type: "Petição",
       lastModified: "1 dia atrás",
-      status: "Finalizado",
-      collaborators: 1
+      status: "Finalizado"
     },
     {
       id: 3,
       title: "Procuração Ad Judicia",
       type: "Procuração",
       lastModified: "3 dias atrás",
-      status: "Em Revisão",
-      collaborators: 3
+      status: "Em Revisão"
     }
   ];
 
-  const templates = [
+  const models = [
     {
       id: 1,
       title: "Contrato de Trabalho",
@@ -71,18 +70,11 @@ export default function Dashboard() {
       trend: "+12%"
     },
     {
-      title: "Templates Utilizados",
+      title: "Modelos Utilizados",
       value: "8",
       description: "Diferentes tipos",
       icon: Library,
       trend: "+25%"
-    },
-    {
-      title: "Colaborações",
-      value: "6",
-      description: "Ativas",
-      icon: Users,
-      trend: "+8%"
     },
     {
       title: "Tempo Economizado",
@@ -116,8 +108,46 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Quick Actions - Moved to top */}
+      <Card className="animate-slide-up">
+        <CardHeader>
+          <CardTitle>Ações Rápidas</CardTitle>
+          <CardDescription>
+            Comece rapidamente com estas opções
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Button variant="professional" className="h-20 flex-col" asChild>
+              <a href="/dashboard/documents/new">
+                <Plus className="h-6 w-6 mb-2" />
+                Novo Documento
+              </a>
+            </Button>
+            <Button variant="elegant" className="h-20 flex-col" asChild>
+              <a href="/dashboard/templates">
+                <Library className="h-6 w-6 mb-2" />
+                Explorar Modelos
+              </a>
+            </Button>
+            <Button variant="elegant" className="h-20 flex-col" asChild>
+              <a href="/dashboard/search">
+                <Search className="h-6 w-6 mb-2" />
+                Buscar Documentos
+              </a>
+            </Button>
+            <Button variant="elegant" className="h-20 flex-col" asChild>
+              <a href="/dashboard/settings">
+                <User className="h-6 w-6 mb-2" />
+                Inserir Dados
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat, index) => (
           <Card key={index} className="animate-fade-in">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -178,15 +208,6 @@ export default function Dashboard() {
                         <span>{doc.type}</span>
                         <span>•</span>
                         <span>{doc.lastModified}</span>
-                        {doc.collaborators > 1 && (
-                          <>
-                            <span>•</span>
-                            <div className="flex items-center">
-                              <Users className="h-3 w-3 mr-1" />
-                              {doc.collaborators}
-                            </div>
-                          </>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -204,14 +225,14 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Popular Templates */}
+        {/* Popular Models */}
         <Card className="animate-slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Templates Populares</CardTitle>
+                <CardTitle>Modelos Populares</CardTitle>
                 <CardDescription>
-                  Os templates mais utilizados por você e outros usuários
+                  Os modelos mais utilizados por você e outros usuários
                 </CardDescription>
               </div>
               <Button variant="elegant" size="sm" asChild>
@@ -224,9 +245,9 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {templates.map((template) => (
+              {models.map((model) => (
                 <div
-                  key={template.id}
+                  key={model.id}
                   className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center space-x-4">
@@ -234,14 +255,14 @@ export default function Dashboard() {
                       <Library className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-medium">{template.title}</h4>
+                      <h4 className="font-medium">{model.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {template.category}
+                        {model.category}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{template.usage}</p>
+                    <p className="text-sm font-medium">{model.usage}</p>
                     <p className="text-xs text-muted-foreground">usos</p>
                   </div>
                 </div>
@@ -250,38 +271,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="animate-slide-up">
-        <CardHeader>
-          <CardTitle>Ações Rápidas</CardTitle>
-          <CardDescription>
-            Comece rapidamente com estas opções
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Button variant="professional" className="h-20 flex-col" asChild>
-              <a href="/dashboard/documents/new">
-                <Plus className="h-6 w-6 mb-2" />
-                Novo Documento
-              </a>
-            </Button>
-            <Button variant="elegant" className="h-20 flex-col" asChild>
-              <a href="/dashboard/templates">
-                <Library className="h-6 w-6 mb-2" />
-                Explorar Templates
-              </a>
-            </Button>
-            <Button variant="elegant" className="h-20 flex-col" asChild>
-              <a href="/dashboard/collaboration">
-                <Users className="h-6 w-6 mb-2" />
-                Convidar Colaborador
-              </a>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

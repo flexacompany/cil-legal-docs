@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -5,7 +6,6 @@ import {
   FileText,
   Library,
   Settings,
-  Users,
   Search,
   Plus
 } from "lucide-react";
@@ -27,8 +27,7 @@ import logoImage from "@/assets/docfacil-logo.png";
 const navigationItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Meus Documentos", url: "/dashboard/documents", icon: FileText },
-  { title: "Templates", url: "/dashboard/templates", icon: Library },
-  { title: "Colaboração", url: "/dashboard/collaboration", icon: Users },
+  { title: "Modelos", url: "/dashboard/templates", icon: Library },
 ];
 
 const quickActions = [
